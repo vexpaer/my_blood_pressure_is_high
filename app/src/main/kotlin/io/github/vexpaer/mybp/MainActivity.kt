@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -31,29 +33,35 @@ class MainActivity : ComponentActivity() {
             // 截图工作流/自动化测试用：--ez skip_onboarding true 跳过引导页（仅本次会话）
             val skipOnboarding = intent?.getBooleanExtra("skip_onboarding", false) ?: false
 
-            MyBPTheme(
-                darkTheme = when (themeMode) {
-                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
-                    ThemeMode.LIGHT -> false
-                    ThemeMode.DARK -> true
-                },
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    when {
-                        skipOnboarding -> MainShell(
-                            tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
-                            viewModel = viewModel,
-                        )
-                        // 还没读出存储值：保持主题底色，避免闪烁错误内容
-                        onboardingDone == null -> Unit
-                        onboardingDone == false -> OnboardingScreen(onFinish = viewModel::completeOnboarding)
-                        else -> MainShell(
-                            tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
-                            viewModel = viewModel,
-                        )
+            // 主题切换：轻量 Crossfade（Paper Minimal 2.0），不做圆形 reveal
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            Crossfade(
+                targetState = darkTheme,
+                animationSpec = tween(220),
+                label = "themeCrossfade",
+            ) { dark ->
+                MyBPTheme(darkTheme = dark) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when {
+                            skipOnboarding -> MainShell(
+                                tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
+                                viewModel = viewModel,
+                            )
+                            // 还没读出存储值：保持主题底色，避免闪烁错误内容
+                            onboardingDone == null -> Unit
+                            onboardingDone == false -> OnboardingScreen(onFinish = viewModel::completeOnboarding)
+                            else -> MainShell(
+                                tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
+                                viewModel = viewModel,
+                            )
+                        }
                     }
                 }
             }
