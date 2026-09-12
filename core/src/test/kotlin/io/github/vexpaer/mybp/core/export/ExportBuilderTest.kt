@@ -55,7 +55,7 @@ class ExportBuilderTest {
         )
         val lines = ExportBuilder.exerciseCsv(rows, zone).removePrefix("\uFEFF").trim().lines()
         assertEquals("date,time,exercise,mode,sets,reps,weight_kg,distance_m,duration_s", lines[0])
-        assertEquals("2026-09-11,08:05,深蹲,SETS_REPS,3,12,,,,", lines[1])
+        assertEquals("2026-09-11,08:05,深蹲,SETS_REPS,3,12,,,", lines[1])
         assertEquals("2026-09-11,19:30,跑步,DISTANCE,,,,2400,1020", lines[2])
         assertEquals("2026-09-12,07:00,平板支撑,TIME,,,,,45", lines[3])
         assertEquals("2026-09-12,07:10,俯卧撑,REPS,,20,,,,", lines[4])
