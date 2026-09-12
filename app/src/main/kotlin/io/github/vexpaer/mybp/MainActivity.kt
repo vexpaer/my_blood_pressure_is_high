@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.vexpaer.mybp.data.ThemeMode
+import io.github.vexpaer.mybp.core.settings.ThemeMode
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.nav.MainShell
 import io.github.vexpaer.mybp.ui.onboarding.OnboardingScreen

@@ -15,11 +15,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.move.MovePlaceholder
 import io.github.vexpaer.mybp.ui.salt.SaltPlaceholder
 import io.github.vexpaer.mybp.ui.settings.SettingsScreen
-import io.github.vexpaer.mybp.ui.sleep.SleepPlaceholder
+import io.github.vexpaer.mybp.ui.sleep.SleepScreen
+import io.github.vexpaer.mybp.ui.sleep.SleepViewModel
 
 /**
  * 应用外壳：内容区 + 品牌底部导航。
@@ -46,7 +48,10 @@ fun MainShell(
                 popEnterTransition = { fadeIn(tween(180)) },
                 popExitTransition = { fadeOut(tween(120)) },
             ) {
-                composable(Tab.SLEEP.route) { SleepPlaceholder() }
+                composable(Tab.SLEEP.route) {
+                    val vm: SleepViewModel = viewModel(factory = SleepViewModel.Factory)
+                    SleepScreen(viewModel = vm)
+                }
                 composable(Tab.SALT.route) { SaltPlaceholder() }
                 composable(Tab.MOVE.route) { MovePlaceholder() }
                 composable(Tab.SETTINGS.route) { SettingsScreen(viewModel = viewModel) }

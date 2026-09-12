@@ -7,9 +7,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.vexpaer.mybp.MyApp
-import io.github.vexpaer.mybp.data.SettingsRepository
-import io.github.vexpaer.mybp.data.ThemeMode
+import io.github.vexpaer.mybp.core.settings.SettingsRepository
 import io.github.vexpaer.mybp.core.settings.TabNames
+import io.github.vexpaer.mybp.core.settings.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
