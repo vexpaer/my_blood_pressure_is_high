@@ -49,6 +49,7 @@ fun MoveScreen(viewModel: MoveViewModel) {
 
     var adding by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<RecordRow?>(null) }
+    var preselectDefId by remember { mutableStateOf<Long?>(null) }
 
     Column(
         modifier = Modifier
@@ -166,7 +167,10 @@ fun MoveScreen(viewModel: MoveViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .clickable { adding = true },
+                        .clickable {
+                            preselectDefId = def.id
+                            adding = true
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(def.name, style = MaterialTheme.typography.bodyMedium)
@@ -189,6 +193,7 @@ fun MoveScreen(viewModel: MoveViewModel) {
         RecordSheet(
             defs = state.defs,
             editing = null,
+            preselectDefId = preselectDefId,
             onDismiss = { adding = false },
             onSaveNewExerciseAndRecord = { name, mode, values ->
                 viewModel.saveNewExerciseAndRecord(name, mode, values) { }

@@ -52,8 +52,22 @@ import io.github.vexpaer.mybp.ui.theme.AppTheme
 @Composable
 fun SaltScreen(viewModel: SaltViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) { viewModel.onScreenEntered() }
+
+    // 系统可能已授权过（上次会话），进入页面时同步一次状态
+    LaunchedEffect(Unit) {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        viewModel.onLocationPermissionResult(granted)
+    }
+
+    var privacyDeclined by remember { mutableStateOf(false) }
 
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -183,9 +197,9 @@ fun SaltScreen(viewModel: SaltViewModel) {
         RestaurantSheet(scored = selected, onDismiss = { viewModel.select(null) })
     }
 
-    if (state.hasKey && !state.privacyAgreed) {
+    if (state.hasKey && !state.privacyAgreed && !privacyDeclined) {
         AlertDialog(
-            onDismissRequest = { /* 先不同意：停留介绍态，不进地图 */ },
+            onDismissRequest = { privacyDeclined = true },
             title = { Text("使用地图服务") },
             text = {
                 Text(
@@ -197,7 +211,7 @@ fun SaltScreen(viewModel: SaltViewModel) {
                 Button(onClick = viewModel::agreePrivacy) { Text("同意并继续") }
             },
             dismissButton = {
-                TextButton(onClick = { /* 保持现状 */ }) { Text("先不用") }
+                TextButton(onClick = { privacyDeclined = true }) { Text("先不用") }
             },
         )
     }

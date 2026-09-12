@@ -1,0 +1,70 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Capture screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            # 引导页
+            adb shell am start -n io.github.vexpaer.mybp/.MainActivity
+            sleep 8
+            adb exec-out screencap -p > shot-onboarding.png
+            adb shell input keyevent 4   # 返回退出，避免写状态
+            sleep 2
+            # 主页面（跳过引导）
+            adb shell am start -n io.github.vexpaer.mybp/.MainActivity --ez skip_onboarding true
+            sleep 6
+            adb exec-out screencap -p > shot-sleep-light.png
+            adb shell input tap 405 2120; sleep 4
+            adb exec-out screencap -p > shot-salt-light.png
+            adb shell input tap 675 2120; sleep 3
+            adb exec-out screencap -p > shot-move-light.png
+            adb shell input tap 945 2120; sleep 3
+            adb exec-out screencap -p > shot-settings-light.png
+            # 深色模式
+            adb shell cmd uimode night yes; sleep 3
+            adb shell input tap 135 2120; sleep 3
+            adb exec-out screencap -p > shot-sleep-dark.png
+            adb shell input tap 945 2120; sleep 3
+            adb exec-out screencap -p > shot-settings-dark.png
+            adb shell cmd uimode night no
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: shot-*.png
+          if-no-files-found: error
