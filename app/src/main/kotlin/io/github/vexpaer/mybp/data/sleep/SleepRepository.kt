@@ -23,6 +23,8 @@ class SleepRepository(
 
     fun hasUsageAccess(): Boolean = usage.hasUsageAccess()
 
+    suspend fun allNights(): List<SleepNight> = dao.getAllOnce().map { it.toDomain() }
+
     val nights: Flow<List<SleepNight>> = dao.observeAll().map { list ->
         list.map { it.toDomain() }
     }

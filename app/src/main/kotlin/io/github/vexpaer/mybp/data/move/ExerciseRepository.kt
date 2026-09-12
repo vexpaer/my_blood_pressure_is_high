@@ -1,5 +1,6 @@
 package io.github.vexpaer.mybp.data.move
 
+import io.github.vexpaer.mybp.core.export.ExportBuilder
 import io.github.vexpaer.mybp.core.move.ExerciseMode
 import io.github.vexpaer.mybp.core.move.ExerciseValues
 import io.github.vexpaer.mybp.data.db.AppDatabase
@@ -58,4 +59,22 @@ class ExerciseRepository(
     suspend fun getRecord(id: Long): ExerciseRecordEntity? = dao.getRecord(id)
 
     suspend fun deleteRecord(id: Long) = dao.deleteRecord(id)
+
+    /** 导出用：全部记录（含已归档运动的历史记录），按时间升序。 */
+    suspend fun allRowsOnce(): List<ExportBuilder.ExerciseRow> {
+        val defs = dao.getDefsOnce().associateBy { it.id }
+        return dao.getAllRowsOnce().map { row ->
+            ExportBuilder.ExerciseRow(
+                name = defs[row.defId]?.name ?: "未命名",
+                mode = row.defMode,
+                dayEpochDay = row.dayEpochDay,
+                createdAt = row.createdAt,
+                sets = row.sets,
+                reps = row.reps,
+                seconds = row.seconds,
+                meters = row.meters,
+                kilograms = row.kilograms,
+            )
+        }
+    }
 }
