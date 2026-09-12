@@ -18,7 +18,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.move.MovePlaceholder
-import io.github.vexpaer.mybp.ui.salt.SaltPlaceholder
+import io.github.vexpaer.mybp.ui.salt.SaltScreen
+import io.github.vexpaer.mybp.ui.salt.SaltViewModel
 import io.github.vexpaer.mybp.ui.settings.SettingsScreen
 import io.github.vexpaer.mybp.ui.sleep.SleepScreen
 import io.github.vexpaer.mybp.ui.sleep.SleepViewModel
@@ -52,7 +53,10 @@ fun MainShell(
                     val vm: SleepViewModel = viewModel(factory = SleepViewModel.Factory)
                     SleepScreen(viewModel = vm)
                 }
-                composable(Tab.SALT.route) { SaltPlaceholder() }
+                composable(Tab.SALT.route) {
+                    val vm: SaltViewModel = viewModel(factory = SaltViewModel.Factory)
+                    SaltScreen(viewModel = vm)
+                }
                 composable(Tab.MOVE.route) { MovePlaceholder() }
                 composable(Tab.SETTINGS.route) { SettingsScreen(viewModel = viewModel) }
             }
