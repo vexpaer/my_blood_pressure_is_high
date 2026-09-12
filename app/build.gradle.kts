@@ -29,10 +29,12 @@ android {
     }
 
     signingConfigs {
-        // CI 中由 release.yml / ci.yml 解码 keystore.jks 并注入环境变量后启用；本地无环境变量时产出未签名包。
-        if (System.getenv("KEYSTORE_BASE64") != null && System.getenv("KEYSTORE_PASSWORD") != null) {
+        // CI 中由 workflow 先把 secret KEYSTORE_BASE64 解码为 keystore.jks 再构建；
+        // 以文件是否存在为开关（GitHub 上未配置的 secret 会被注入为空串而非 null）。
+        val keystore = rootProject.file("keystore.jks")
+        if (keystore.exists() && System.getenv("KEYSTORE_PASSWORD") != null) {
             create("ci") {
-                storeFile = rootProject.file("keystore.jks")
+                storeFile = keystore
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("KEY_ALIAS") ?: "mybp"
                 keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
