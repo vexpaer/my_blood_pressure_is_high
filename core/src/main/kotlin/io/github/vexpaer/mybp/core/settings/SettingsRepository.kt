@@ -25,6 +25,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     )
     private val themeKey = stringPreferencesKey("theme_mode")
     private val onboardingKey = booleanPreferencesKey("onboarding_done")
+    private val saltPrivacyKey = booleanPreferencesKey("salt_amap_privacy_agreed")
 
     val tabNames: Flow<List<String?>> = store.data.map { p -> tabKeys.map { p[it] } }
 
@@ -33,6 +34,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     }
 
     val onboardingDone: Flow<Boolean> = store.data.map { it[onboardingKey] ?: false }
+
+    /** 用户是否同意使用高德地图/搜索服务（进入「少吃点盐」时询问）。 */
+    val saltPrivacyAgreed: Flow<Boolean> = store.data.map { it[saltPrivacyKey] ?: false }
+
+    suspend fun setSaltPrivacyAgreed() {
+        store.edit { it[saltPrivacyKey] = true }
+    }
 
     suspend fun setTabName(index: Int, value: String) {
         require(index in tabKeys.indices)
