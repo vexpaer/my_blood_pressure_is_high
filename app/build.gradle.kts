@@ -35,6 +35,7 @@ android {
         if (keystore.exists() && System.getenv("KEYSTORE_PASSWORD") != null) {
             create("ci") {
                 storeFile = keystore
+                storeType = "PKCS12"
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("KEY_ALIAS") ?: "mybp"
                 keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
