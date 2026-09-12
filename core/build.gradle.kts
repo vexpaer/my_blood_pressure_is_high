@@ -9,5 +9,7 @@ kotlin {
 }
 
 dependencies {
+    api(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

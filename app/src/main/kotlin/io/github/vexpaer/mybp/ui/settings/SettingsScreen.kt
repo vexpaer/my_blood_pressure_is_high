@@ -40,7 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vexpaer.mybp.BuildConfig
 import io.github.vexpaer.mybp.R
 import io.github.vexpaer.mybp.core.settings.TabNames
-import io.github.vexpaer.mybp.data.ThemeMode
+import io.github.vexpaer.mybp.core.settings.ThemeMode
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.components.SectionLabel
 import io.github.vexpaer.mybp.ui.nav.Tab
