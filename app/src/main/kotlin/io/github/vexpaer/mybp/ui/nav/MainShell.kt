@@ -17,7 +17,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vexpaer.mybp.ui.MainViewModel
-import io.github.vexpaer.mybp.ui.move.MovePlaceholder
+import io.github.vexpaer.mybp.ui.move.MoveScreen
+import io.github.vexpaer.mybp.ui.move.MoveViewModel
 import io.github.vexpaer.mybp.ui.salt.SaltScreen
 import io.github.vexpaer.mybp.ui.salt.SaltViewModel
 import io.github.vexpaer.mybp.ui.settings.SettingsScreen
@@ -57,7 +58,10 @@ fun MainShell(
                     val vm: SaltViewModel = viewModel(factory = SaltViewModel.Factory)
                     SaltScreen(viewModel = vm)
                 }
-                composable(Tab.MOVE.route) { MovePlaceholder() }
+                composable(Tab.MOVE.route) {
+                    val vm: MoveViewModel = viewModel(factory = MoveViewModel.Factory)
+                    MoveScreen(viewModel = vm)
+                }
                 composable(Tab.SETTINGS.route) { SettingsScreen(viewModel = viewModel) }
             }
         }
