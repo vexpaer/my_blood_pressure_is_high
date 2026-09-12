@@ -9,6 +9,7 @@ import androidx.room.Room
 import io.github.vexpaer.mybp.core.settings.SettingsRepository
 import io.github.vexpaer.mybp.data.db.AppDatabase
 import io.github.vexpaer.mybp.data.location.FrameworkLocationSource
+import io.github.vexpaer.mybp.data.move.ExerciseRepository
 import io.github.vexpaer.mybp.data.salt.AmapPoiDataSource
 import io.github.vexpaer.mybp.data.sleep.SleepRepository
 import io.github.vexpaer.mybp.data.usage.UsageStatsSource
@@ -25,6 +26,8 @@ class AppContainer(context: Application) {
 
     val amapPoiDataSource = AmapPoiDataSource(context)
     val locationSource = FrameworkLocationSource(context)
+
+    val exerciseRepository = ExerciseRepository(database)
 }
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
