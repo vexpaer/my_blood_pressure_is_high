@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 启动图标：居中展示品牌图形（复用自适应图标前景） -->
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:pivotX="54"
+        android:pivotY="54">
+        <path
+            android:fillColor="#31684E"
+            android:pathData="M46,27 h16 a3,3 0 0 1 3,3 v5 a3,3 0 0 1 -3,3 h-16 a3,3 0 0 1 -3,-3 v-5 a3,3 0 0 1 3,-3 z M51,32.5 m-1.5,0 a1.5,1.5 0 1 1 3,0 a1.5,1.5 0 1 1 -3,0 M57,32.5 m-1.5,0 a1.5,1.5 0 1 1 3,0 a1.5,1.5 0 1 1 -3,0 M47.5,38 h13 a1,1 0 0 1 1,1 v3 a1,1 0 0 1 -1,1 h-13 a1,1 0 0 1 -1,-1 v-3 a1,1 0 0 1 1,-1 z M45,42 h18 l2.4,24.5 a6.5,6.5 0 0 1 -6.4,7.5 h-10 a6.5,6.5 0 0 1 -6.4,-7.5 z M70.5,79 m-2,0 a2,2 0 1 1 4,0 a2,2 0 1 1 -4,0 M75.5,85.5 m-1.6,0 a1.6,1.6 0 1 1 3.2,0 a1.6,1.6 0 1 1 -3.2,0 M33,85 Q33,76 42,73.5 Q41,83 33,85 Z" />
+    </group>
+</vector>
