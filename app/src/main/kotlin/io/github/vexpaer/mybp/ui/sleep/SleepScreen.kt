@@ -137,7 +137,15 @@ fun SleepScreen(viewModel: SleepViewModel) {
         (6 downTo 0).forEach { i ->
             val day = today - i
             val night = state.nights.firstOrNull { it.wakeDayEpochDay == day }
-            NightRow(night = night, epochDay = day, todayEpochDay = today) {
+            // 只在最近一个空行上提示，避免整列重复噪音
+            val isFirstEmptyRow = night == null &&
+                state.nights.none { it.wakeDayEpochDay in (day + 1)..today }
+            NightRow(
+                night = night,
+                epochDay = day,
+                todayEpochDay = today,
+                showHint = isFirstEmptyRow,
+            ) {
                 editTarget = if (night != null) {
                     SleepEditTarget(
                         wakeDay = LocalDate.ofEpochDay(day),
@@ -281,6 +289,7 @@ private fun NightRow(
     night: SleepNight?,
     epochDay: Long,
     todayEpochDay: Long,
+    showHint: Boolean,
     onClick: () -> Unit,
 ) {
     Row(
@@ -316,11 +325,13 @@ private fun NightRow(
                 color = AppTheme.extended.inkFaint,
             )
             Spacer(Modifier.weight(1f))
-            Text(
-                "点一下手动记",
-                style = MaterialTheme.typography.labelSmall,
-                color = AppTheme.extended.inkFaint,
-            )
+            if (showHint) {
+                Text(
+                    "点一下手动记",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppTheme.extended.inkFaint,
+                )
+            }
         }
     }
 }
