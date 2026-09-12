@@ -28,6 +28,8 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = viewModel(factory = MainViewModel.Factory)
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
+            // 截图工作流/自动化测试用：--ez skip_onboarding true 跳过引导页（仅本次会话）
+            val skipOnboarding = intent?.getBooleanExtra("skip_onboarding", false) ?: false
 
             MyBPTheme(
                 darkTheme = when (themeMode) {
@@ -40,10 +42,14 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    when (onboardingDone) {
+                    when {
+                        skipOnboarding -> MainShell(
+                            tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
+                            viewModel = viewModel,
+                        )
                         // 还没读出存储值：保持主题底色，避免闪烁错误内容
-                        null -> Unit
-                        false -> OnboardingScreen(onFinish = viewModel::completeOnboarding)
+                        onboardingDone == null -> Unit
+                        onboardingDone == false -> OnboardingScreen(onFinish = viewModel::completeOnboarding)
                         else -> MainShell(
                             tabNames = viewModel.tabNames.collectAsStateWithLifecycle().value,
                             viewModel = viewModel,

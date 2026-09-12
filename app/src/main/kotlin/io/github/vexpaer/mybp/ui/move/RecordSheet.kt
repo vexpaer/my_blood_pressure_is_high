@@ -42,6 +42,7 @@ import io.github.vexpaer.mybp.ui.theme.AppTheme
 fun RecordSheet(
     defs: List<ExerciseDefEntity>,
     editing: RecordRow?,
+    preselectDefId: Long? = null,
     onDismiss: () -> Unit,
     onSaveNewExerciseAndRecord: (name: String, mode: ExerciseMode, values: ExerciseValues) -> Unit,
     onSaveRecord: (defId: Long, values: ExerciseValues) -> Unit,
@@ -52,7 +53,9 @@ fun RecordSheet(
     var creatingNew by remember(editing) { mutableStateOf(defs.isEmpty() && editing == null) }
     var newMode by remember { mutableStateOf(ExerciseMode.SETS_REPS) }
     var newName by remember { mutableStateOf("") }
-    var selectedDefId by remember(editing) { mutableStateOf<Long?>(editing?.defId ?: defs.firstOrNull()?.id) }
+    var selectedDefId by remember(editing, preselectDefId) {
+        mutableStateOf<Long?>(editing?.defId ?: preselectDefId ?: defs.firstOrNull()?.id)
+    }
 
     val activeMode: ExerciseMode = when {
         editing != null -> ExerciseMode.valueOf(editing.defMode)

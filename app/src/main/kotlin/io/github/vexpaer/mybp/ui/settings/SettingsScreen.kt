@@ -142,7 +142,7 @@ private fun NameField(
     value: String?,
     onSave: (String) -> Unit,
 ) {
-    var text by rememberSaveable(index) { mutableStateOf(value ?: "") }
+    var text by rememberSaveable(value) { mutableStateOf(value ?: "") }
     var wasFocused by remember { mutableStateOf(false) }
     TextField(
         value = text,
@@ -183,7 +183,7 @@ private fun ThemeRow(label: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clickable(onClick = onClick),
+            .clickable(role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)
