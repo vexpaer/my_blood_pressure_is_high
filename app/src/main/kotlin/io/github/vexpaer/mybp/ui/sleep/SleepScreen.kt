@@ -138,9 +138,9 @@ fun SleepScreen(viewModel: SleepViewModel) {
         (6 downTo 0).forEach { i ->
             val day = today - i
             val night = state.nights.firstOrNull { it.wakeDayEpochDay == day }
-            // 只在最近一个空行上提示，避免整列重复噪音
+            // 只在"紧挨着数据的最近一个空日"提示（今天为空时必提示），避免整列噪音
             val isFirstEmptyRow = night == null &&
-                state.nights.none { it.wakeDayEpochDay in (day + 1)..today }
+                (day == today || state.nights.any { it.wakeDayEpochDay == day + 1 })
             NightRow(
                 night = night,
                 epochDay = day,
