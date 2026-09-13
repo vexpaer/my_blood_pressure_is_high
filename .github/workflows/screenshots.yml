@@ -52,17 +52,19 @@ jobs:
             adb wait-for-device
             adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 3; done'
             sleep 10
+            adb install -r app/build/outputs/apk/release/app-release.apk || adb install -r app/build/outputs/apk/release/app-release.apk
             adb shell pm grant io.github.vexpaer.mybp android.permission.ACCESS_FINE_LOCATION || true
             adb shell pm grant io.github.vexpaer.mybp android.permission.ACCESS_COARSE_LOCATION || true
             adb shell appops set io.github.vexpaer.mybp GET_USAGE_STATS allow || true
-            adb install -r app/build/outputs/apk/release/app-release.apk || adb install -r app/build/outputs/apk/release/app-release.apk
             adb emu geo fix 116.3975 39.9085 || true
             sleep 3
+            adb shell am force-stop io.github.vexpaer.mybp
             adb shell am start -n io.github.vexpaer.mybp/.MainActivity
             sleep 8
             adb exec-out screencap -p > shot-onboarding.png
             adb shell input keyevent 4
-            sleep 2
+            adb shell am force-stop io.github.vexpaer.mybp
+            sleep 1
             adb shell am start -n io.github.vexpaer.mybp/.MainActivity --ez skip_onboarding true
             sleep 5
             adb exec-out screencap -p > shot-sleep-empty.png
@@ -74,6 +76,7 @@ jobs:
             sleep 12
             adb exec-out screencap -p > shot-salt-map.png
             adb shell input keyevent 4
+            adb shell am force-stop io.github.vexpaer.mybp
             sleep 1
             adb shell am start -n io.github.vexpaer.mybp/.MainActivity --ez skip_onboarding true --es seed_demo_data mybp-seed-2026
             sleep 6
@@ -109,10 +112,14 @@ jobs:
             sleep 3
             adb exec-out screencap -p > shot-settings-dark.png
             adb shell cmd uimode night no
+            adb logcat -d > full-logcat.txt || true
+            grep -ia "amap\|3dmap\|javacommonutil" full-logcat.txt | tail -80 > amap-log.txt || true
             adb shell ls /sdcard >/dev/null
 
       - uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: shot-*.png
+          path: |
+            shot-*.png
+            amap-log.txt
           if-no-files-found: error
