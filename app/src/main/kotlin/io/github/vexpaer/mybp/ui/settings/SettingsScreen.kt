@@ -1,5 +1,7 @@
 package io.github.vexpaer.mybp.ui.settings
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -26,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,27 +37,70 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vexpaer.mybp.BuildConfig
 import io.github.vexpaer.mybp.R
 import io.github.vexpaer.mybp.core.settings.TabNames
 import io.github.vexpaer.mybp.core.settings.ThemeMode
+import io.github.vexpaer.mybp.ui.ExportState
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.components.SectionLabel
 import io.github.vexpaer.mybp.ui.nav.Tab
 import io.github.vexpaer.mybp.ui.theme.AppTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private const val REPO_URL = "https://github.com/vexpaer/my_blood_pressure_is_high"
 
-/** 设置：改 Tab 名称、主题、关于与隐私说明。 */
+/**
+ * 设置（Paper Minimal 2.0）：个性化 / 数据与备份 / 关于与隐私。
+ * 视觉中心是干净的偏好行 + 数据出口，不堆卡片。
+ */
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     val rawNames by viewModel.rawTabNames.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri == null) {
+            viewModel.onExportCancelled()
+        } else {
+            scope.launch {
+                try {
+                    val bytes = viewModel.buildExport()
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(uri)?.use { out ->
+                            out.write(bytes)
+                        } ?: throw IOException("output stream unavailable")
+                    }
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.onExportSuccess()
+                } catch (e: Exception) {
+                    viewModel.onExportFailed()
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -69,10 +116,10 @@ fun SettingsScreen(viewModel: MainViewModel) {
             modifier = Modifier.padding(top = 20.dp),
         )
 
-        // —— 底部导航名称 ——
-        SectionLabel("底部导航名称")
+        // —— 个性化 ——
+        SectionLabel("个性化")
         Text(
-            "改成你顺口的叫法，最多 6 个字；留空就用默认名称。",
+            "底部导航名称：改成你顺口的叫法，最多 6 个字；留空就用默认。",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -90,7 +137,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
         TextButton(
             onClick = viewModel::resetTabNames,
             enabled = !isDefault,
-            modifier = Modifier.padding(top = 4.dp),
         ) {
             Icon(
                 ImageVector.vectorResource(R.drawable.ic_undo),
@@ -101,11 +147,26 @@ fun SettingsScreen(viewModel: MainViewModel) {
             Text("恢复默认名称")
         }
 
-        // —— 主题 ——
-        SectionLabel("主题")
+        Text("主题", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
         ThemeRow("跟随系统", themeMode == ThemeMode.SYSTEM) { viewModel.setThemeMode(ThemeMode.SYSTEM) }
         ThemeRow("浅色", themeMode == ThemeMode.LIGHT) { viewModel.setThemeMode(ThemeMode.LIGHT) }
         ThemeRow("深色", themeMode == ThemeMode.DARK) { viewModel.setThemeMode(ThemeMode.DARK) }
+
+        // —— 数据与备份 ——
+        SectionLabel("数据与备份")
+        ExportRow(
+            state = exportState,
+            onClick = {
+                val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                exportLauncher.launch("my-blood-pressure-is-high-$today.zip")
+            },
+        )
+        Text(
+            "导出为一个 ZIP（sleep.csv · exercise.csv · settings.json · README.txt），保存到你在系统文件面板选择的位置。数据只从手机里出来，不做任何上传。",
+            style = MaterialTheme.typography.labelSmall,
+            color = AppTheme.extended.inkFaint,
+            modifier = Modifier.padding(top = 6.dp),
+        )
 
         // —— 关于 ——
         SectionLabel("关于")
@@ -117,13 +178,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         TextButton(onClick = { uriHandler.openUri(REPO_URL) }) {
+            Icon(
+                ImageVector.vectorResource(R.drawable.ic_code),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
             Text("GitHub 仓库")
         }
 
         SectionLabel("隐私")
         PrivacyLine("睡眠估算、运动记录与设置只保存在这台手机上。没有账号，没有上传。")
         PrivacyLine("「少吃点盐」只在你使用它的时候访问一次定位，用于查找附近餐厅。")
-        PrivacyLine("不收集、不上传、不跟踪。")
+        PrivacyLine("不收集、不上传、不跟踪。导出的文件保存在你选择的位置。")
 
         Spacer(Modifier.height(32.dp))
         Text(
@@ -183,12 +250,55 @@ private fun ThemeRow(label: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clickable(role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick),
+            .clickable(role = Role.RadioButton, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)
         Spacer(Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** 导出记录行：下载图标在成功后短暂变为对勾。 */
+@Composable
+private fun ExportRow(state: ExportState?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .clickable(onClick = onClick, enabled = state != ExportState.Working),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Crossfade(
+            targetState = state == ExportState.Success,
+            animationSpec = tween(200),
+            label = "exportIcon",
+        ) { done ->
+            Icon(
+                ImageVector.vectorResource(if (done) R.drawable.ic_check else R.drawable.ic_export),
+                contentDescription = null,
+                tint = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text("导出记录", style = MaterialTheme.typography.titleSmall)
+            Text(
+                when (state) {
+                    ExportState.Working -> "正在打包…"
+                    ExportState.Success -> "记录已导出，去你选择的位置找它。"
+                    ExportState.Failed -> "导出失败，请重试。"
+                    null -> "把睡眠和运动记录保存到手机。"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = when (state) {
+                    ExportState.Failed -> AppTheme.extended.saltBad
+                    ExportState.Success -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
     }
 }
 

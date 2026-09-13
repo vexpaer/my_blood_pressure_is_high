@@ -9,15 +9,20 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.TimeUnit
 import io.github.vexpaer.mybp.data.salt.LatLon
 
+/** 定位数据源抽象（便于用假实现测试 ViewModel）。 */
+interface LocationSource {
+    suspend fun currentLocation(timeoutMs: Long = 12_000L): io.github.vexpaer.mybp.data.salt.LatLon?
+}
+
 /**
  * 系统定位（LocationManager 单次定位）：
  * 不引入额外定位 SDK，减少依赖与后台行为；只在用户进入「少吃点盐」并主动触发时调用。
  * 优先返回 10 分钟内的 lastKnownLocation，否则监听单次更新，超时返回 null。
  */
-class FrameworkLocationSource(private val context: Context) {
+class FrameworkLocationSource(private val context: Context) : LocationSource {
 
     @SuppressLint("MissingPermission") // 调用方在 UI 层确认权限后才调用
-    suspend fun currentLocation(timeoutMs: Long = 12_000L): LatLon? = withTimeoutOrNull(timeoutMs) {
+    override suspend fun currentLocation(timeoutMs: Long): LatLon? = withTimeoutOrNull(timeoutMs) {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
             ?: return@withTimeoutOrNull null
         val providers = listOf(

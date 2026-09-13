@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      AMAP_API_KEY: ${{ secrets.AMAP_API_KEY }}
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}

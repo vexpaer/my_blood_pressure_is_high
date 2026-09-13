@@ -3,6 +3,7 @@ package io.github.vexpaer.mybp.ui.sleep
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -137,9 +138,9 @@ fun SleepScreen(viewModel: SleepViewModel) {
         (6 downTo 0).forEach { i ->
             val day = today - i
             val night = state.nights.firstOrNull { it.wakeDayEpochDay == day }
-            // 只在最近一个空行上提示，避免整列重复噪音
+            // 只在"紧挨着数据的最近一个空日"提示（今天为空时必提示），避免整列噪音
             val isFirstEmptyRow = night == null &&
-                state.nights.none { it.wakeDayEpochDay in (day + 1)..today }
+                (day == today || state.nights.any { it.wakeDayEpochDay == day + 1 })
             NightRow(
                 night = night,
                 epochDay = day,
@@ -213,15 +214,10 @@ private fun TonightCard(
                 }
             }
             if (tonight != null) {
-                Text(
-                    "${TimeFormats.clock(tonight.bedtimeEpochMillis)} — ${TimeFormats.clock(tonight.wakeEpochMillis)}",
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    TimeFormats.duration(tonight.durationMinutes),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                Spacer(Modifier.height(8.dp))
+                SleepArc(
+                    night = tonight,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -305,12 +301,27 @@ private fun NightRow(
             modifier = Modifier.width(52.dp),
         )
         if (night != null) {
-            Text(
-                "${TimeFormats.clock(night.bedtimeEpochMillis)} — ${TimeFormats.clock(night.wakeEpochMillis)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.weight(1f))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "${TimeFormats.clock(night.bedtimeEpochMillis)} — ${TimeFormats.clock(night.wakeEpochMillis)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // 时长小条：以 13 小时为满格
+                Box(
+                    Modifier
+                        .padding(top = 5.dp)
+                        .fillMaxWidth(
+                            (night.durationMinutes / 780f).coerceIn(0.06f, 1f),
+                        )
+                        .height(4.dp)
+                        .background(
+                            AppTheme.extended.sleep.copy(alpha = 0.55f),
+                            RoundedCornerShape(2.dp),
+                        ),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             if (night.isManual) ManualBadge()
             Spacer(Modifier.width(8.dp))
             Text(

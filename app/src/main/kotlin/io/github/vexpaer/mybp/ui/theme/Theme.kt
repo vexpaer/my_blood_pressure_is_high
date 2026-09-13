@@ -121,12 +121,14 @@ fun MyBPTheme(
     content: @Composable () -> Unit,
 ) {
     val scheme = if (darkTheme) darkScheme() else lightScheme()
-    CompositionLocalProvider(LocalExtendedColors provides if (darkTheme) darkExtended else lightExtended) {
-        MaterialTheme(
-            colorScheme = scheme,
-            typography = AppTypography,
-            shapes = AppShapes,
-            content = content,
-        )
+    provideReducedMotion {
+        CompositionLocalProvider(LocalExtendedColors provides if (darkTheme) darkExtended else lightExtended) {
+            MaterialTheme(
+                colorScheme = scheme,
+                typography = AppTypography,
+                shapes = AppShapes,
+                content = content,
+            )
+        }
     }
 }

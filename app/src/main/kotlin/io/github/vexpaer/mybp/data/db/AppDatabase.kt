@@ -29,6 +29,9 @@ interface SleepNightDao {
     @Query("SELECT * FROM sleep_nights WHERE wakeDayEpochDay = :wakeDay")
     suspend fun get(wakeDay: Long): SleepNightEntity?
 
+    @Query("SELECT * FROM sleep_nights ORDER BY wakeDayEpochDay ASC")
+    suspend fun getAllOnce(): List<SleepNightEntity>
+
     @Upsert
     suspend fun upsert(night: SleepNightEntity)
 
@@ -98,6 +101,12 @@ interface ExerciseDao {
 
     @Query("DELETE FROM exercise_records WHERE id = :id")
     suspend fun deleteRecord(id: Long)
+
+    @Query("SELECT r.id, r.defId, r.dayEpochDay, r.sets, r.reps, r.seconds, r.meters, r.kilograms, r.createdAt, d.name AS defName, d.mode AS defMode FROM exercise_records r INNER JOIN exercise_defs d ON r.defId = d.id ORDER BY r.dayEpochDay ASC, r.createdAt ASC")
+    suspend fun getAllRowsOnce(): List<RecordRow>
+
+    @Query("SELECT * FROM exercise_defs ORDER BY createdAt ASC")
+    suspend fun getDefsOnce(): List<ExerciseDefEntity>
 }
 
 @Database(

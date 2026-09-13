@@ -62,8 +62,8 @@ fun RestaurantSheet(
                 .padding(bottom = 24.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ScoreBadge(score = verdict.score, band = verdict.band, large = true)
-                Spacer(Modifier.padding(start = 14.dp))
+                ScoreRing(score = verdict.score, band = verdict.band)
+                Spacer(Modifier.width(16.dp))
                 Column {
                     Text(
                         scored.poi.name,
@@ -75,14 +75,14 @@ fun RestaurantSheet(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        bandLabel(verdict.band),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bandColor,
+                    )
                 }
             }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                bandLabel(verdict.band),
-                style = MaterialTheme.typography.titleSmall,
-                color = bandColor,
-            )
 
             Text(
                 "为什么是这个分",

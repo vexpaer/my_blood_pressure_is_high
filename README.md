@@ -67,20 +67,36 @@
 要求：JDK 17，Android SDK 35。CI（`.github/workflows/ci.yml`）在每次
 push / PR 上自动执行以上全部检查。
 
-### 配置高德 Key（可选）
+### 配置高德 Key
 
 不配置也能用（地图页为演示模式）。要启用真实地图与附近餐厅：
 
 1. 在[高德开放平台](https://console.amap.com/)创建 **Android Key**，
-   包名填 `io.github.vexpaer.mybp`，SHA1 填应用签名证书的 SHA1：
-   `keytool -list -v -keystore your.keystore`
-2. 通过任一方式注入：
-   - 本地构建：`./gradlew :app:assembleDebug -PAMAP_API_KEY=你的Key`
-   - CI 构建：仓库 Settings → Secrets and variables → Actions 新建
-     `AMAP_API_KEY`（`ci.yml` 与 `release.yml` 已支持；当前未配置时构建为无 Key 版本）
+   包名填 `io.github.vexpaer.mybp`，SHA1 填应用签名证书的 SHA1
+   （可运行仓库的手动工作流 **Signing info** 查看，或本地
+   `keytool -list -v -keystore your.keystore`）
+2. 在仓库 Settings → Secrets and variables → Actions → Repository secrets
+   新建 **`AMAP_API_KEY`**
+3. CI / Release 构建会自动注入（`ci.yml` / `release.yml` / `screenshots.yml`）；
+   本地构建可用 `./gradlew :app:assembleDebug -PAMAP_API_KEY=你的Key`
 
-> 本仓库的 Release APK 默认**不含**高德 Key（演示模式）。
-> 高德 Key 与应用签名绑定，属个人凭证，不入库。
+> 真实 Key 与应用签名绑定，属个人凭证，不入库；Release APK 由 CI
+> 用仓库 Secrets 签名并注入 Key，安装即可用真实地图。
+
+## 数据导出
+
+设置 → 数据与备份 → **导出记录**：通过系统文件面板选择位置，
+生成 `my-blood-pressure-is-high-YYYY-MM-DD.zip`：
+
+| 文件 | 内容 |
+|---|---|
+| `sleep.csv` | 睡眠估算结果（date / bedtime / wake_time / duration_minutes / source） |
+| `exercise.csv` | 运动记录（date / time / exercise / mode / sets / reps / weight_kg / distance_m / duration_s） |
+| `settings.json` | 设置快照，含 `schema_version`（为未来导入预留） |
+| `README.txt` | 字段说明 |
+
+CSV 为 UTF-8（带 BOM，Excel 可直接打开中文）；缺失数据留空，不用 0 冒充。
+导出是你主动触发的唯一"数据出口"，全程不联网。
 
 ### 发布签名
 
