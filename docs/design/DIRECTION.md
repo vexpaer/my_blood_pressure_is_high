@@ -163,3 +163,74 @@
 - [x] 空状态文案与品牌语气一致
 - [x] 图表语义描述齐全；颜色不单独承载信息（徽标带数字、柱状带文案）
 
+---
+
+# Paper Minimal 2.0（v0.1.1）
+
+在保留「纸感极简 + 松绿品牌」的前提下，v0.1.1 补上了**数据可视化、微动画与图形化反馈**：
+静态高级感之外，让人愿意每天打开。参考了 GymMane 的"数据即 UI / 强视觉中心"思路，
+全部用自己的 Compose Canvas / Vector 实现，未复制其任何代码、素材或布局。
+
+## Motion Tokens（ui/theme/Motion.kt）
+
+| Token | 值 | 用途 |
+|---|---|---|
+| Easing | CubicBezier(0.2, 0, 0, 1) | 一切过渡 |
+| Fast | 150ms | 图标切换、icon 交叉淡化 |
+| Normal | 220ms | 主题 Crossfade、页面淡入 |
+| Emphasized | 320ms | 半径圈过渡 |
+| Draw | 500ms | Arc / Ring 首次描画 |
+| Grow | 380ms | 柱条生长 |
+| Stagger | 30ms | Marker 错峰 |
+
+原则：**只有状态变化才动画**。禁止无限漂浮/pulse/渐变、粒子、巨型 Lottie。
+系统「移除动画」（ANIMATOR_DURATION_SCALE = 0）→ `LocalReducedMotion`，
+所有进场/描画动画直接呈现最终状态。
+
+## Visualization Tokens（ui/theme/Chart.kt）
+
+stroke 2dp · point 4dp · bar 16dp/6dp 圆角 · RingStroke 10dp · RingStrokeSmall 7dp ·
+动画时长取 Motion tokens。统一用于：Sleep Arc、Sleep Trend、Score Ring、Streak Ring、
+WeekBars——四页像同一个 App。
+
+## 四个页面的视觉中心
+
+- **早睡早起** = Sleep Arc：半圆夜间时间轴（左入睡右起床，中央 7 h 44 min），
+  首现描画动画；朗读语义「估算入睡 23 点 47 分…共 7 小时 44 分」
+- **少吃点盐** = 地图 + 低盐友好度：徽标 Marker（数字+箭头）错峰淡入（前 15 个）、
+  首次定位一次 pulse、搜索一次雷达波、半径圈平滑变化；详情页 Score Ring
+- **抬腿跑跑** = Streak Ring（柿子橙，7 天满圈）+ WeekBars 生长动画 +
+  保存成功时圆环+对勾描画反馈（Canvas 自绘，非 Lottie）
+- **设置** = 干净的偏好行 + 数据出口（导出记录，SAF ZIP）
+
+## Icon System
+
+28 个自绘线性图标：24dp 网格、1.8dp 圆头描边、统一 outline。
+运动项目按名称关键词自动映射（跑→跑步、蹲→腿部、平板→计时…纯字符串规则，
+识别失败回落 generic，core 有测试）。
+
+## 数据出口（导出）
+
+设置 → 数据与备份 → 导出记录：SAF CreateDocument 生成
+`my-blood-pressure-is-high-YYYY-MM-DD.zip`
+（sleep.csv · exercise.csv · settings.json · README.txt，UTF-8 带 BOM，
+缺失字段留空）。成功后下载图标短暂变为对勾 + 轻触觉。
+
+## 地图与隐私（v0.1.1 修复）
+
+- 进入「少吃点盐」→ 隐私说明 → 同意后才初始化高德 SDK（Lazy init）
+- 官方 Privacy API：`MapsInitializer` 与 `ServiceSettings` 的
+  updatePrivacyShow/updatePrivacyAgree（签名按 SDK 11.2.100/9.8.1 jar 核实）
+- API Key 仅经 GitHub Secret `AMAP_API_KEY` 注入 CI/Release，永不入库
+- 定位权限拒绝：不崩溃，可稍后再开或去系统设置
+
+## UI Review 4 记录（v0.1.1 Polish）
+
+- [x] Motion/Visualization tokens 全图表统一（SleepArc/趋势/ScoreRing/StreakRing/WeekBars）
+- [x] Reduced Motion 全组件接通
+- [x] 触觉仅限：Tab 切换 / 保存运动 / 导出成功
+- [x] 图表语义描述（Arc/ScoreRing/WeekBars/Trend）全覆盖
+- [x] 无 InfiniteTransition；全部动画 finite
+- [x] 截图审查（光/暗 × 数据态/空态/隐私态）逐张核对后修正
+
+

@@ -5,6 +5,42 @@
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-09-13
+
+Polish Release：**Paper Minimal 2.0** —— 数据可视化、微动画与图形化反馈。
+
+### Added
+
+- **数据导出**：设置 → 数据与备份 → 导出记录，生成 ZIP
+  （sleep.csv / exercise.csv / settings.json / README.txt，UTF-8，缺失留空）
+- **Sleep Arc**：早睡早起页的半圆夜间时间轴视觉中心（Canvas 自绘 + 首现描画动画）
+- **Score Ring**：餐厅详情的圆环分数视觉中心
+- **Streak Ring / WeekBars 动画**：抬腿跑跑页圆环 + 柱条生长 + 保存成功描画反馈
+- **统一 Motion System**：时长/缓动 tokens、系统"移除动画"全程尊重
+- **统一 Visualization Tokens**：五类图表同一套描边/圆点/圆角/动画
+- **图标系统扩展**：28 个统一 1.8dp 线性图标；运动项目按名称关键词自动配图标
+- 高德地图真正接通：CI/Release 通过 GitHub Secret `AMAP_API_KEY` 注入真实 Key
+- 新增 `signing-info.yml`（手动查询签名证书 SHA1/SHA256，不输出任何密钥）
+
+### Changed
+
+- 设置页重构为 个性化 / 数据与备份 / 关于与隐私 三段式
+- 底部导航：药丸平滑滑动、图标 0.94→1.0 缩放、标签透明度过渡
+- 主题切换 220ms Crossfade；深色模式持续独立校准
+- 地图 Marker 升级为分数徽标+箭头，错峰淡入；详情页视觉重排
+- README 更新导出说明与高德配置说明
+
+### Fixed
+
+- **CI / Release 未注入 `AMAP_API_KEY` 的问题**（此前构建均为无 Key 演示模式）
+- **高德 SDK 隐私合规初始化**：`MapsInitializer` + `ServiceSettings` 官方
+  Privacy API 在任何 MapView/PoiSearch 创建之前调用（签名按当前 SDK jar 核实）
+- 地图 SDK 懒初始化：未同意隐私说明时完全不创建 SDK 对象、不请求定位
+- 定位权限拒绝流程：不崩溃，提供"稍后开启 / 去系统设置"
+- 无障碍：Sleep Arc / Score Ring / WeekBars 语义描述，触控目标与对比度复核
+
+[0.1.1]: https://github.com/vexpaer/my_blood_pressure_is_high/releases/tag/v0.1.1
+
 ## [0.1.0] — 2026-09-12
 
 首个公开版本。一个温和、自嘲、不制造焦虑的 Android 生活方式 App：

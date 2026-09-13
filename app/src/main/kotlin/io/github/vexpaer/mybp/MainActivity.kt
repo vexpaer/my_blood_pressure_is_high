@@ -14,18 +14,30 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vexpaer.mybp.core.settings.ThemeMode
+import io.github.vexpaer.mybp.data.debug.SeedData
 import io.github.vexpaer.mybp.ui.MainViewModel
 import io.github.vexpaer.mybp.ui.nav.MainShell
 import io.github.vexpaer.mybp.ui.onboarding.OnboardingScreen
 import io.github.vexpaer.mybp.ui.theme.MyBPTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // 演示/截图种子：需要 adb 显式传入且本地库为空；真实数据永远不被触碰
+        val seedKey = intent?.getStringExtra("seed_demo_data")
+        if (seedKey == SeedData.EXPECTED_KEY) {
+            lifecycleScope.launch {
+                SeedData.seedIfNeeded((application as MyApp).container.database)
+            }
+        }
+
         setContent {
             val viewModel: MainViewModel = viewModel(factory = MainViewModel.Factory)
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()

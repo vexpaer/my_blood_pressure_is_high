@@ -19,8 +19,8 @@ android {
         applicationId = "io.github.vexpaer.mybp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = (project.findProperty("versionName") as String?) ?: "0.1.0"
+        versionCode = 2
+        versionName = (project.findProperty("versionName") as String?) ?: "0.1.1"
         manifestPlaceholders["AMAP_API_KEY"] = amapApiKey
         buildConfigField("String", "AMAP_API_KEY", "\"$amapApiKey\"")
         ndk {
