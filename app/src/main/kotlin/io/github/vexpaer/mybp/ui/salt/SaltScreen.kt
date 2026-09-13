@@ -248,7 +248,11 @@ fun SaltScreen(viewModel: SaltViewModel) {
                 )
             },
             confirmButton = {
-                Button(onClick = viewModel::agreePrivacy) { Text("同意并继续") }
+                Button(onClick = {
+                    // 用户同意的瞬间先过 SDK 隐私接口（MapView 组合前的第一道保险）
+                    io.github.vexpaer.mybp.data.salt.AmapPrivacy.ensure(context)
+                    viewModel.agreePrivacy()
+                }) { Text("同意并继续") }
             },
             dismissButton = {
                 TextButton(onClick = { privacyDeclined = true }) { Text("先不用") }

@@ -88,16 +88,29 @@ class AmapPoiDataSource(private val context: Context) : PoiDataSource {
 }
 
 /**
- * 高德隐私合规（按当前 SDK 版本要求的官方 API，在创建任何 MapView / PoiSearch 之前调用）：
+ * 高德隐私合规（按当前 SDK 版本要求的官方 API，必须在创建任何 MapView/PoiSearch 之前调用）：
  * - 地图 SDK：MapsInitializer.updatePrivacyShow / updatePrivacyAgree
  * - 搜索 SDK：ServiceSettings.updatePrivacyShow / updatePrivacyAgree
  * 用户在 App 内的隐私弹层点「同意并继续」之后才会调用。
+ * 注意：MapView 的构造函数就会校验隐私状态，所以 ensure 必须先于构造执行。
  */
 object AmapPrivacy {
     fun ensure(context: Context) {
-        runCatching { MapsInitializer.updatePrivacyShow(context, true, true) }
-        runCatching { MapsInitializer.updatePrivacyAgree(context, true) }
-        runCatching { ServiceSettings.updatePrivacyShow(context, true, true) }
-        runCatching { ServiceSettings.updatePrivacyAgree(context, true) }
+        runCatching {
+            MapsInitializer.updatePrivacyShow(context, true, true)
+            android.util.Log.d("AmapPrivacy", "MapsInitializer.updatePrivacyShow ok")
+        }.onFailure { android.util.Log.w("AmapPrivacy", "MapsInitializer.updatePrivacyShow failed", it) }
+        runCatching {
+            MapsInitializer.updatePrivacyAgree(context, true)
+            android.util.Log.d("AmapPrivacy", "MapsInitializer.updatePrivacyAgree ok")
+        }.onFailure { android.util.Log.w("AmapPrivacy", "MapsInitializer.updatePrivacyAgree failed", it) }
+        runCatching {
+            ServiceSettings.updatePrivacyShow(context, true, true)
+            android.util.Log.d("AmapPrivacy", "ServiceSettings.updatePrivacyShow ok")
+        }.onFailure { android.util.Log.w("AmapPrivacy", "ServiceSettings.updatePrivacyShow failed", it) }
+        runCatching {
+            ServiceSettings.updatePrivacyAgree(context, true)
+            android.util.Log.d("AmapPrivacy", "ServiceSettings.updatePrivacyAgree ok")
+        }.onFailure { android.util.Log.w("AmapPrivacy", "ServiceSettings.updatePrivacyAgree failed", it) }
     }
 }

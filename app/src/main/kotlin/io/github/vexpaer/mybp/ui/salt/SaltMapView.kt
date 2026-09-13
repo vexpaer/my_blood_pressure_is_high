@@ -30,6 +30,7 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import io.github.vexpaer.mybp.core.salt.SaltScorer
+import io.github.vexpaer.mybp.data.salt.AmapPrivacy
 import io.github.vexpaer.mybp.data.salt.LatLon
 import io.github.vexpaer.mybp.ui.theme.LocalReducedMotion
 import io.github.vexpaer.mybp.ui.theme.MotionTokens
@@ -64,7 +65,11 @@ fun SaltMapView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val reducedMotion = LocalReducedMotion.current
-    val mapView = remember { MapView(context) }
+    // 隐私 API 必须先于 MapView 构造（构造函数即校验隐私状态）
+    val mapView = remember {
+        AmapPrivacy.ensure(context)
+        MapView(context)
+    }
     val aMap = remember { mapView.map }
     val poisState = rememberUpdatedState(pois)
     val clickState = rememberUpdatedState(onPoiClick)
