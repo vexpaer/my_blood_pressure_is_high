@@ -1,27 +1,45 @@
 package io.github.vexpaer.mybp.ui.salt
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vexpaer.mybp.core.salt.SaltScorer
 import io.github.vexpaer.mybp.data.salt.Poi
 import io.github.vexpaer.mybp.ui.theme.AppTheme
+import io.github.vexpaer.mybp.ui.theme.ChartTokens
+import io.github.vexpaer.mybp.ui.theme.LocalReducedMotion
+import io.github.vexpaer.mybp.ui.theme.MotionTokens
 
 /** 分数徽标：数字即低盐友好度（0–10），颜色分档但不单独承载信息。 */
 @Composable
@@ -48,6 +66,64 @@ fun bandLabel(band: SaltScorer.Band): String = when (band) {
     SaltScorer.Band.FRIENDLY -> "低盐友好"
     SaltScorer.Band.NEUTRAL -> "看情况点"
     SaltScorer.Band.CAUTION -> "谨慎选择"
+}
+
+/**
+ * Score Ring —— 餐厅详情的视觉中心：圆环从 0 扫到分数（约 400ms），
+ * 中央是分数本体（颜色不是唯一信息，数字永远在场）。
+ */
+@Composable
+fun ScoreRing(score: Double, band: SaltScorer.Band, modifier: Modifier = Modifier) {
+    val color = when (band) {
+        SaltScorer.Band.FRIENDLY -> AppTheme.extended.saltGood
+        SaltScorer.Band.NEUTRAL -> AppTheme.extended.saltMid
+        SaltScorer.Band.CAUTION -> AppTheme.extended.saltBad
+    }
+    val hairline = AppTheme.extended.hairline
+    val reducedMotion = LocalReducedMotion.current
+    val target = (score / 10.0).toFloat()
+    val progress = remember { Animatable(if (reducedMotion) target else 0f) }
+
+    LaunchedEffect(score) {
+        if (reducedMotion) {
+            progress.snapTo(target)
+        } else {
+            progress.snapTo(0f)
+            progress.animateTo(target, tween(400, easing = MotionTokens.Easing))
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .size(92.dp)
+            .semantics { contentDescription = "低盐友好度 $score 分，满分 10 分。" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = ChartTokens.RingStrokeSmall.toPx()
+            val inset = stroke
+            val dim = size.minDimension - inset * 2
+            drawArc(
+                color = hairline,
+                startAngle = -90f, sweepAngle = 360f, useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = androidx.compose.ui.geometry.Size(dim, dim),
+                style = Stroke(stroke, cap = StrokeCap.Butt),
+            )
+            drawArc(
+                color = color,
+                startAngle = -90f, sweepAngle = 360f * progress.value, useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = androidx.compose.ui.geometry.Size(dim, dim),
+                style = Stroke(stroke, cap = StrokeCap.Round),
+            )
+        }
+        Text(
+            String.format("%.1f", score),
+            style = MaterialTheme.typography.titleLarge,
+            color = color,
+        )
+    }
 }
 
 @Composable

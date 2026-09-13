@@ -1,8 +1,13 @@
 package io.github.vexpaer.mybp.ui.salt
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -68,14 +74,16 @@ fun SaltScreen(viewModel: SaltViewModel) {
     }
 
     var privacyDeclined by remember { mutableStateOf(false) }
+    var deniedOnce by remember { mutableStateOf(false) }
 
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { result ->
-        viewModel.onLocationPermissionResult(
+        val granted =
             result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                result[Manifest.permission.ACCESS_COARSE_LOCATION] == true,
-        )
+                result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (!granted) deniedOnce = true
+        viewModel.onLocationPermissionResult(granted)
     }
 
     Column(
@@ -94,33 +102,43 @@ fun SaltScreen(viewModel: SaltViewModel) {
         Spacer(Modifier.height(16.dp))
 
         if (state.hasKey) {
-            // 地图：拿到定位后才展示（否则显示占位卡）
+            // 地图：同意隐私后即初始化（Lazy init）；拿到定位前显示图面等待定位
             if (state.privacyAgreed) {
-                val center = state.mapCenter
-                if (center != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp)
-                            .clip(RoundedCornerShape(18.dp)),
-                    ) {
-                        SaltMapView(
-                            center = center,
-                            radius = state.radius,
-                            pois = state.pois,
-                            onPoiClick = viewModel::select,
-                            modifier = Modifier.fillMaxSize(),
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp)
+                        .clip(RoundedCornerShape(18.dp)),
+                ) {
+                    SaltMapView(
+                        center = state.mapCenter,
+                        radius = state.radius,
+                        pois = state.pois,
+                        onPoiClick = viewModel::select,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (state.mapCenter == null && state.status == SaltStatus.Locating) {
+                        Text(
+                            "正在找你在哪…",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 12.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                    RoundedCornerShape(8.dp),
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
-                    RadiusChips(
-                        radius = state.radius,
-                        enabled = state.status == SaltStatus.Ready || state.status is SaltStatus.Error,
-                        onSelect = viewModel::setRadius,
-                    )
-                } else if (state.status !is SaltStatus.Error && state.status != SaltStatus.Locating) {
-                    PrivacyIntroCard()
                 }
+                Spacer(Modifier.height(12.dp))
+                RadiusChips(
+                    radius = state.radius,
+                    enabled = state.status == SaltStatus.Ready || state.status is SaltStatus.Error,
+                    onSelect = viewModel::setRadius,
+                )
             } else {
                 PrivacyIntroCard()
             }
@@ -146,25 +164,47 @@ fun SaltScreen(viewModel: SaltViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("需要定位", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        if (deniedOnce) "没有定位权限，可以稍后开启。" else "需要定位",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                     Text(
                         "用你的位置查附近的餐厅。只在使用这个页面时访问一次，不会保存位置。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(10.dp))
-                    Button(
-                        onClick = {
-                            locationLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                                ),
-                            )
-                        },
-                        modifier = Modifier.height(44.dp),
-                    ) {
-                        Text("允许定位")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                locationLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.height(44.dp),
+                        ) {
+                            Text("允许定位")
+                        }
+                        if (deniedOnce) {
+                            FilledTonalButton(
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(
+                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                Uri.fromParts("package", context.packageName, null),
+                                            ),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.height(44.dp),
+                            ) {
+                                Text("去系统设置")
+                            }
+                        }
                     }
                 }
             }

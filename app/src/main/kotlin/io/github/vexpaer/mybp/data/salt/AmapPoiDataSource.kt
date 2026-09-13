@@ -2,6 +2,7 @@ package io.github.vexpaer.mybp.data.salt
 
 import android.content.Context
 import com.amap.api.maps.MapsInitializer
+import com.amap.api.services.core.ServiceSettings
 import com.amap.api.services.core.LatLonPoint
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
@@ -21,19 +22,22 @@ data class Poi(
 
 data class LatLon(val lat: Double, val lng: Double)
 
+/** 周边餐饮搜索的数据源抽象（便于用假实现测试 ViewModel）。 */
+interface PoiDataSource {
+    /** 失败/超时返回 null；成功但附近没有餐厅返回空列表。 */
+    suspend fun searchFoodAround(center: LatLon, radiusMeters: Int, page: Int = 0): List<Poi>?
+}
+
 /**
  * 高德搜索 SDK 的周边餐饮查询。
- * 仅在用户使用「少吃点盐」时调用；Key 缺失时上层直接走演示模式，不会请求。
+ * 仅在用户同意隐私说明并进入「少吃点盐」时调用；Key 缺失时上层走演示模式。
  */
-class AmapPoiDataSource(private val context: Context) {
+class AmapPoiDataSource(private val context: Context) : PoiDataSource {
 
-    /**
-     * 周边搜索「餐饮服务」，返回按距离排序的 POI；失败/超时返回 null。
-     */
-    suspend fun searchFoodAround(
+    override suspend fun searchFoodAround(
         center: LatLon,
         radiusMeters: Int,
-        page: Int = 0,
+        page: Int,
     ): List<Poi>? = withTimeoutOrNull(10_000L) {
         suspendCancellableCoroutine { cont ->
             runCatching {
@@ -68,7 +72,7 @@ class AmapPoiDataSource(private val context: Context) {
                     }
 
                     override fun onPoiItemSearched(item: com.amap.api.services.core.PoiItem?, rCode: Int) {
-                        // 单条详情，v0.1.0 不用
+                        // 单条详情，v0.1.x 不用
                     }
                 })
                 search.searchPOIAsyn()
@@ -84,12 +88,16 @@ class AmapPoiDataSource(private val context: Context) {
 }
 
 /**
- * 高德隐私合规（SDK 9.x 起强制）：用户在 App 内同意后调用一次。
- * 全部 runCatching：不同 SDK 版本方法签名略有差异，失败不阻断 App。
+ * 高德隐私合规（按当前 SDK 版本要求的官方 API，在创建任何 MapView / PoiSearch 之前调用）：
+ * - 地图 SDK：MapsInitializer.updatePrivacyShow / updatePrivacyAgree
+ * - 搜索 SDK：ServiceSettings.updatePrivacyShow / updatePrivacyAgree
+ * 用户在 App 内的隐私弹层点「同意并继续」之后才会调用。
  */
 object AmapPrivacy {
     fun ensure(context: Context) {
         runCatching { MapsInitializer.updatePrivacyShow(context, true, true) }
         runCatching { MapsInitializer.updatePrivacyAgree(context, true) }
+        runCatching { ServiceSettings.updatePrivacyShow(context, true, true) }
+        runCatching { ServiceSettings.updatePrivacyAgree(context, true) }
     }
 }

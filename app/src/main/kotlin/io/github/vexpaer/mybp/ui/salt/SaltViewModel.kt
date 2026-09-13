@@ -10,10 +10,10 @@ import io.github.vexpaer.mybp.BuildConfig
 import io.github.vexpaer.mybp.MyApp
 import io.github.vexpaer.mybp.core.settings.SettingsRepository
 import io.github.vexpaer.mybp.core.salt.SaltScorer
-import io.github.vexpaer.mybp.data.location.FrameworkLocationSource
-import io.github.vexpaer.mybp.data.salt.AmapPoiDataSource
+import io.github.vexpaer.mybp.data.location.LocationSource
 import io.github.vexpaer.mybp.data.salt.LatLon
 import io.github.vexpaer.mybp.data.salt.Poi
+import io.github.vexpaer.mybp.data.salt.PoiDataSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,43 +45,40 @@ data class SaltUiState(
 )
 
 /**
- * 少吃点盐：定位（按需）→ 高德周边餐饮 → 本地低盐评分。
+ * 少吃点盐：隐私同意 → 地图 SDK 懒初始化 → 定位（按需）→ 高德周边餐饮 → 本地低盐评分。
  * 没有 Key 时进入演示模式：App 完全可用，用示例餐厅展示能力。
  */
 class SaltViewModel(
     private val settings: SettingsRepository,
-    private val poiSource: AmapPoiDataSource,
-    private val locationSource: FrameworkLocationSource,
+    private val poiSource: PoiDataSource,
+    private val locationSource: LocationSource,
+    hasKey: Boolean,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(SaltUiState(hasKey = BuildConfig.AMAP_API_KEY.isNotBlank()))
+    private val _state = MutableStateFlow(SaltUiState(hasKey = hasKey))
     val state: StateFlow<SaltUiState> = _state.asStateFlow()
 
     private var lastLocation: LatLon? = null
     private var searchJob: Job? = null
 
-    /** 首次进入页面：读取隐私同意状态；已同意且有 Key 就直接开始。 */
+    /** 首次进入页面：读取隐私同意状态；演示模式直接就绪。 */
     fun onScreenEntered() {
         viewModelScope.launch {
             val agreed = settings.saltPrivacyAgreed.first()
             _state.update { it.copy(privacyAgreed = agreed) }
             if (demoMode) {
                 _state.update { it.copy(status = SaltStatus.Ready, pois = demoPois) }
-            } else if (agreed) {
-                maybeLocate()
             }
         }
     }
 
-    /** 用户在隐私弹层点了「同意并继续」。 */
+    /** 用户在隐私弹层点了「同意并继续」：此后 UI 才初始化地图 SDK。 */
     fun agreePrivacy() {
         viewModelScope.launch {
             settings.setSaltPrivacyAgreed()
             _state.update { it.copy(privacyAgreed = true) }
             if (demoMode) {
                 _state.update { it.copy(status = SaltStatus.Ready, pois = demoPois) }
-            } else {
-                maybeLocate()
             }
         }
     }
@@ -108,7 +105,11 @@ class SaltViewModel(
     private val demoMode get() = !_state.value.hasKey
 
     private fun maybeLocate() {
+        if (demoMode) return
+        // 隐私未同意：不初始化 SDK、不定位、不搜索（Paper Minimal 隐私承诺）
+        if (!_state.value.privacyAgreed) return
         if (!_state.value.hasLocationPermission) return
+        if (_state.value.status == SaltStatus.Locating || _state.value.status == SaltStatus.Loading) return
         _state.update { it.copy(status = SaltStatus.Locating) }
         viewModelScope.launch {
             val location = locationSource.currentLocation()
@@ -150,6 +151,7 @@ class SaltViewModel(
                     settings = app.container.settingsRepository,
                     poiSource = app.container.amapPoiDataSource,
                     locationSource = app.container.locationSource,
+                    hasKey = BuildConfig.AMAP_API_KEY.isNotBlank(),
                 )
             }
         }
