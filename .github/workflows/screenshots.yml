@@ -49,72 +49,67 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -e
-            PKG=io.github.vexpaer.mybp
-            tap_text() { python3 scripts/ui_tap.py "$1"; }
-            shot() { adb exec-out screencap -p > "$1"; }
-
-            # 系统级预授权：定位 + 使用情况访问（截图专用，模拟器内）
-            adb shell pm grant $PKG android.permission.ACCESS_FINE_LOCATION || true
-            adb shell pm grant $PKG android.permission.ACCESS_COARSE_LOCATION || true
-            adb shell appops set $PKG GET_USAGE_STATS allow || true
-
-            adb install -r app/build/outputs/apk/release/app-release.apk
-
-            # 北京市中心（高德 POI 搜索点）
+            adb wait-for-device
+            adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 3; done'
+            sleep 10
+            adb shell pm grant io.github.vexpaer.mybp android.permission.ACCESS_FINE_LOCATION || true
+            adb shell pm grant io.github.vexpaer.mybp android.permission.ACCESS_COARSE_LOCATION || true
+            adb shell appops set io.github.vexpaer.mybp GET_USAGE_STATS allow || true
+            adb install -r app/build/outputs/apk/release/app-release.apk || adb install -r app/build/outputs/apk/release/app-release.apk
             adb emu geo fix 116.3975 39.9085 || true
             sleep 3
-
-            # 1) Onboarding（全新安装）
-            adb shell am start -n $PKG/.MainActivity
+            adb shell am start -n io.github.vexpaer.mybp/.MainActivity
             sleep 8
-            shot shot-onboarding.png
-            adb shell input keyevent 4; sleep 2
-
-            # 2) 空状态（未种子化）：早睡早起空态
-            adb shell am start -n $PKG/.MainActivity --ez skip_onboarding true
+            adb exec-out screencap -p > shot-onboarding.png
+            adb shell input keyevent 4
+            sleep 2
+            adb shell am start -n io.github.vexpaer.mybp/.MainActivity --ez skip_onboarding true
             sleep 5
-            shot shot-sleep-empty.png
-
-            # 3) 盐页隐私弹层（未同意过）
-            adb shell input tap 405 2120; sleep 3
-            shot shot-salt-privacy.png
-            tap_text "同意并继续"
+            adb exec-out screencap -p > shot-sleep-empty.png
+            adb shell input tap 405 2120
+            sleep 3
+            adb exec-out screencap -p > shot-salt-privacy.png
+            python3 scripts/ui_tap.py "同意并继续"
             sleep 4
-            # 定位已授权 → 等地图 + POI
             sleep 12
-            shot shot-salt-map.png
-
-            # 4) 种子化（写本地示例数据）后截数据态
-            adb shell input keyevent 4; sleep 1
-            adb shell am start -n $PKG/.MainActivity --ez skip_onboarding true --es seed_demo_data mybp-seed-2026
+            adb exec-out screencap -p > shot-salt-map.png
+            adb shell input keyevent 4
+            sleep 1
+            adb shell am start -n io.github.vexpaer.mybp/.MainActivity --ez skip_onboarding true --es seed_demo_data mybp-seed-2026
             sleep 6
-            adb shell input tap 135 2120; sleep 4
-            shot shot-sleep-light.png
-            adb shell input tap 405 2120; sleep 12
-            shot shot-salt-light.png
-            adb shell input tap 675 2120; sleep 3
-            shot shot-move-light.png
-            adb shell input tap 945 2120; sleep 3
-            shot shot-settings-light.png
-            # 设置页滚到数据与备份
-            adb shell input swipe 540 1800 540 700 300; sleep 2
-            shot shot-settings-export.png
-            adb shell input swipe 540 700 540 1800 300; sleep 1
-
-            # 5) 深色模式
-            adb shell cmd uimode night yes; sleep 3
-            adb shell input tap 135 2120; sleep 3
-            shot shot-sleep-dark.png
-            adb shell input tap 405 2120; sleep 8
-            shot shot-salt-dark.png
-            adb shell input tap 675 2120; sleep 3
-            shot shot-move-dark.png
-            adb shell input tap 945 2120; sleep 3
-            shot shot-settings-dark.png
+            adb shell input tap 135 2120
+            sleep 4
+            adb exec-out screencap -p > shot-sleep-light.png
+            adb shell input tap 405 2120
+            sleep 12
+            adb exec-out screencap -p > shot-salt-light.png
+            adb shell input tap 675 2120
+            sleep 3
+            adb exec-out screencap -p > shot-move-light.png
+            adb shell input tap 945 2120
+            sleep 3
+            adb exec-out screencap -p > shot-settings-light.png
+            adb shell input swipe 540 1800 540 700 300
+            sleep 2
+            adb exec-out screencap -p > shot-settings-export.png
+            adb shell input swipe 540 700 540 1800 300
+            sleep 1
+            adb shell cmd uimode night yes
+            sleep 3
+            adb shell input tap 135 2120
+            sleep 3
+            adb exec-out screencap -p > shot-sleep-dark.png
+            adb shell input tap 405 2120
+            sleep 8
+            adb exec-out screencap -p > shot-salt-dark.png
+            adb shell input tap 675 2120
+            sleep 3
+            adb exec-out screencap -p > shot-move-dark.png
+            adb shell input tap 945 2120
+            sleep 3
+            adb exec-out screencap -p > shot-settings-dark.png
             adb shell cmd uimode night no
-
-            ls -la shot-*.png
+            adb shell ls /sdcard >/dev/null
 
       - uses: actions/upload-artifact@v4
         with:
